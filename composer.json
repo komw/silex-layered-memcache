@@ -5,7 +5,7 @@
     "silex",
     "memcache"
   ],
-  "homepage": "https://github.com/komw/silex-layered-memcached",
+  "homepage": "https://github.com/komw/silex-layered-memcache",
   "type": "library",
   "license": "MIT",
   "authors": [
