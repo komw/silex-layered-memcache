@@ -1,6 +1,6 @@
 <?php
 
-namespace komw\silex\memcached;
+namespace komw\silex\memcache;
 
 use Memcached;
 use Silex\Application;
