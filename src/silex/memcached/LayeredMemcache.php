@@ -11,7 +11,7 @@ use Silex\ServiceProviderInterface;
  * User: Szymon Gładysz (komw@sgladysz.com)
  * Date: 25.04.2016
  */
-class LayeredMemcached implements ServiceProviderInterface
+class LayeredMemcache implements ServiceProviderInterface
 {
   /**
    * @param Application $app
