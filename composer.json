@@ -1,5 +1,5 @@
 {
-  "name": "komw/silex-layered-memcached",
+  "name": "komw/silex-layered-memcache",
   "description": "Memcache extension for Silex",
   "keywords": [
     "silex",
