@@ -1,0 +1,8 @@
+# Auto detect text files and perform LF normalization
+*        text=auto
+
+*.html   text diff=html eol=lf
+*.php    text diff=php  eol=lf
+*.css    text eol=lf
+*.js     text eol=lf
+*.sql    text eol=lf
