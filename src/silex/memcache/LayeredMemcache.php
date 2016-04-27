@@ -65,7 +65,6 @@ class LayeredMemcache implements ServiceProviderInterface
         if (!$this->memcache->get($ttlProtectionMutexKey)) {
           $this->memcache->set($ttlProtectionMutexKey, '1');
           $data = $callable();
-          var_dump('API CAL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
           $this->memcache->set($ttlProtectionKey, 1, $ttl - 5);
           $this->memcache->set($keyname, $data, $ttl);
           $this->memcache->delete($ttlProtectionMutexKey);
