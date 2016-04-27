@@ -17,7 +17,18 @@ class LayeredMemcache implements ServiceProviderInterface
    * @param Application $app
    */
   public function boot(Application $app) {
+    $servers = isset($app['memcache.server']) ? $app['memcache.server'] : array(
+      array('127.0.0.1', 11211),
+    );
 
+    $memcache = new \Memcached(serialize($servers));
+    if (!count($memcache->getServerList())) {
+      foreach ($servers as $config) {
+        call_user_func_array(array($memcache, 'addServer'), array_values($config));
+      }
+    }
+
+    $this->memcache = $memcache;
   }
 
   /**
@@ -31,18 +42,6 @@ class LayeredMemcache implements ServiceProviderInterface
    * @throws \Exception
    */
   public function register(Application $app) {
-    $servers = isset($app['memcache.server']) ? $app['memcache.server'] : array(
-      array('127.0.0.1', 11211),
-    );
-
-    $memcache = new \Memcached(serialize($servers));
-    if (!count($memcache->getServerList())) {
-      foreach ($servers as $config) {
-        call_user_func_array(array($memcache, 'addServer'), array_values($config));
-      }
-    }
-
-    $this->memcache          = $memcache;
     $app['layered_memcache'] = $this;
   }
 
@@ -55,6 +54,7 @@ class LayeredMemcache implements ServiceProviderInterface
    * @return array|string
    */
   public function get($keyname, $callable, $ttl = 300) {
+
     $keyname = md5($keyname);
     if ($ttl >= 5) {
       $ttlProtectionKey      = 'TTL_' . md5($keyname);
@@ -65,6 +65,7 @@ class LayeredMemcache implements ServiceProviderInterface
         if (!$this->memcache->get($ttlProtectionMutexKey)) {
           $this->memcache->set($ttlProtectionMutexKey, '1');
           $data = $callable();
+          var_dump('API CAL!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
           $this->memcache->set($ttlProtectionKey, 1, $ttl - 5);
           $this->memcache->set($keyname, $data, $ttl);
           $this->memcache->delete($ttlProtectionMutexKey);
