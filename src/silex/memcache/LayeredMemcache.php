@@ -17,9 +17,9 @@ class LayeredMemcache implements ServiceProviderInterface
    * @param Application $app
    */
   public function boot(Application $app) {
-    $servers = isset($app['memcache.server']) ? $app['memcache.server'] : array(
-      array('127.0.0.1', 11211),
-    );
+    $servers = isset($app['memcache.server']) ? $app['memcache.server'] : [
+      ['127.0.0.1', 11211],
+    ];
 
     $memcache = new \Memcached(serialize($servers));
     if (!count($memcache->getServerList())) {
@@ -49,24 +49,25 @@ class LayeredMemcache implements ServiceProviderInterface
   /**
    * @param string   $keyname
    * @param callable $callable
-   * @param int      $ttl
+   * @param int      $refreshCacheTTL
+   * @param int      $dataTTL
    *
    * @return array|string
    */
-  public function get($keyname, $callable, $ttl = 300) {
+  public function get($keyname, $callable, $refreshCacheTTL = 250, $dataTTL = 300) {
 
     $keyname = md5($keyname);
-    if ($ttl >= 5) {
+    if ($dataTTL > $refreshCacheTTL) {
       $ttlProtectionKey      = 'TTL_' . md5($keyname);
       $ttlProtectionMutexKey = 'M' . $ttlProtectionKey;
+      $keyTtl                = $this->memcache->get($ttlProtectionKey);
 
-      $keyTtl = $this->memcache->get($ttlProtectionKey);
       if ((!$keyTtl)) {
         if (!$this->memcache->get($ttlProtectionMutexKey)) {
           $this->memcache->set($ttlProtectionMutexKey, '1');
           $data = $callable();
-          $this->memcache->set($ttlProtectionKey, 1, $ttl - 5);
-          $this->memcache->set($keyname, $data, $ttl);
+          $this->memcache->set($ttlProtectionKey, 1, $refreshCacheTTL);
+          $this->memcache->set($keyname, $data, $dataTTL);
           $this->memcache->delete($ttlProtectionMutexKey);
 
           return $data;
@@ -78,7 +79,7 @@ class LayeredMemcache implements ServiceProviderInterface
       $data = $this->memcache->get($keyname);
       if (!$data) {
         $data = $callable();
-        $this->memcache->set($keyname, $data, $ttl);
+        $this->memcache->set($keyname, $data, $dataTTL);
       }
 
       return $data;

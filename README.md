@@ -15,12 +15,12 @@ Create a composer.json in your projects root-directory:
 
 More Information
 ----------------
+Example:
 ```
 $app->register(new LayeredMemcache(),
     [
-     'memcache.library' => 'memcached',
-     'memcache.server'  => array(
-       array('127.0.0.1', 11211),
+     'memcache.server'  => [array(
+       ['127.0.0.1', 11211],
     ]
 ));
 
@@ -31,6 +31,7 @@ $data = $app['layered_memcache']->get('Keyname', function () {
         }
 );
 ```
+
 
 License
 -------
