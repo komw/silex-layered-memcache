@@ -17,10 +17,21 @@ class LayeredMemcache implements ServiceProviderInterface
    * @param Application $app
    */
   public function boot(Application $app) {
-    $servers = isset($app['memcache.server']) ? $app['memcache.server'] : [
-      ['127.0.0.1', 11211],
-    ];
+    $servers = [];
 
+    if (isset($app['memcache.server']) && !empty($app['memcache.server'])) {
+      $servers = $app['memcache.server'];
+    }
+
+    if (getenv('MEMCACHED_PORT_11211_TCP_ADDR') && getenv('MEMCACHED_PORT_11211_TCP_PORT')) {
+      $servers = [
+        [getenv('MEMCACHED_PORT_11211_TCP_ADDR'), getenv('MEMCACHED_PORT_11211_TCP_PORT')],
+      ];
+    }
+    if (empty($servers)) {
+      $servers[] = ['127.0.0.1', 11211];
+    }
+    
     $memcache = new \Memcached(serialize($servers));
     if (!count($memcache->getServerList())) {
       foreach ($servers as $config) {

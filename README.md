@@ -22,10 +22,14 @@ $app->register(new LayeredMemcache(),
      'memcache.server'  => [array(
        ['127.0.0.1', 11211],
     ]
-));
+);
+
+//OR
+
+$app->register(new LayeredMemcache());
 
 
-$data = $app['layered_memcache']->get('Keyname', function () {
+$data = $app['layered_memcache']->get('key_name', function () {
           //gettting data from DB,etc.
           return $data;
         }
