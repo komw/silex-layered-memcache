@@ -31,7 +31,7 @@ class LayeredMemcache implements ServiceProviderInterface
     if (empty($servers)) {
       $servers[] = ['127.0.0.1', 11211];
     }
-    
+
     $memcache = new \Memcached(serialize($servers));
     if (!count($memcache->getServerList())) {
       foreach ($servers as $config) {
@@ -56,6 +56,22 @@ class LayeredMemcache implements ServiceProviderInterface
     $app['layered_memcache'] = $this;
   }
 
+  /**
+   * @param $keyname
+   * @param $callable
+   * @param $dataTTL
+   *
+   * @return mixed
+   */
+  private function getFromMemcache($keyname, $callable, $dataTTL) {
+    $data = $this->memcache->get($keyname);
+    if ($data !== false) {
+      $data = $callable();
+      $this->memcache->set($keyname, $data, $dataTTL);
+    }
+
+    return $data;
+  }
 
   /**
    * @param string   $keyname
@@ -66,34 +82,28 @@ class LayeredMemcache implements ServiceProviderInterface
    * @return array|string
    */
   public function get($keyname, $callable, $refreshCacheTTL = 250, $dataTTL = 300) {
-
     $keyname = md5($keyname);
     if ($dataTTL > $refreshCacheTTL) {
       $ttlProtectionKey      = 'TTL_' . md5($keyname);
       $ttlProtectionMutexKey = 'M' . $ttlProtectionKey;
-      $keyTtl                = $this->memcache->get($ttlProtectionKey);
 
-      if ((!$keyTtl)) {
-        if (!$this->memcache->get($ttlProtectionMutexKey)) {
+      if ($this->memcache->get($ttlProtectionKey) === false) {
+        if ($this->memcache->get($ttlProtectionMutexKey) === false) {
           $this->memcache->set($ttlProtectionMutexKey, '1');
           $data = $callable();
-          $this->memcache->set($ttlProtectionKey, 1, $refreshCacheTTL);
           $this->memcache->set($keyname, $data, $dataTTL);
+          $this->memcache->set($ttlProtectionKey, 1, $refreshCacheTTL);
           $this->memcache->delete($ttlProtectionMutexKey);
 
           return $data;
         }
       }
 
-      return $this->memcache->get($keyname);
+      return $this->getFromMemcache($keyname, $callable, $dataTTL);
     } else {
-      $data = $this->memcache->get($keyname);
-      if (!$data) {
-        $data = $callable();
-        $this->memcache->set($keyname, $data, $dataTTL);
-      }
-
-      return $data;
+      return $this->getFromMemcache($keyname, $callable, $dataTTL);
     }
   }
 }
+
+
