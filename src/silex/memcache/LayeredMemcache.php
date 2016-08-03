@@ -94,16 +94,15 @@ class LayeredMemcache implements ServiceProviderInterface
           $this->memcache->set($ttlProtectionMutexKey, '1', $refreshCacheTTL);
           try {
             $data = $callable();
+            if ($data) {
+              $this->memcache->set($keyname, $data, $dataTTL);
+            } else {
+              $data = $this->memcache->get($keyname);
+            }
+            $this->memcache->set($ttlProtectionKey, 1, $refreshCacheTTL);
           } finally {
             $this->memcache->delete($ttlProtectionMutexKey);
           }
-          if ($data) {
-            $this->memcache->set($keyname, $data, $dataTTL);
-          } else {
-            $data = $this->memcache->get($keyname);
-          }
-          $this->memcache->set($ttlProtectionKey, 1, $refreshCacheTTL);
-          $this->memcache->delete($ttlProtectionMutexKey);
 
           return $data;
         }
